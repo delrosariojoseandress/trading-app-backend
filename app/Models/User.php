@@ -30,4 +30,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

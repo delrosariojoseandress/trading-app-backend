@@ -4,46 +4,72 @@ FROM php:8.3-apache
 # SYSTEM DEPENDENCIES
 # =========================
 RUN apt-get update && apt-get install -y \
-    git zip unzip libzip-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip
+    git \
+    curl \
+    zip \
+    unzip \
+    libzip-dev \
+    libpq-dev \
+    libonig-dev \
+    libxml2-dev \
+    netcat-openbsd \
+    && docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    zip
 
-# Enable Apache rewrite (Laravel routing)
+# =========================
+# ENABLE APACHE MOD REWRITE
+# =========================
 RUN a2enmod rewrite
 
 # =========================
-# APACHE CONFIG (IMPORTANT)
+# APACHE DOCUMENT ROOT (Laravel /public)
 # =========================
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+ && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # =========================
 # WORKDIR
 # =========================
 WORKDIR /var/www/html
 
-# Copy project files
+# =========================
+# COPY PROJECT FILES
+# =========================
 COPY . .
 
 # =========================
-# COMPOSER
+# INSTALL COMPOSER
 # =========================
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# =========================
+# INSTALL PHP DEPENDENCIES
+# =========================
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
 # =========================
-# PERMISSIONS
+# PERMISSIONS (IMPORTANT FOR LARAVEL)
 # =========================
-RUN chown -R www-data:www-data /var/www/html
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache
 
 # =========================
-# OPTIONAL: RUN MIGRATIONS ON START
+# ENTRYPOINT SCRIPT
 # =========================
-CMD php artisan migrate --force && apache2-foreground
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # =========================
 # EXPOSE PORT
 # =========================
 EXPOSE 80
+
+# =========================
+# START CONTAINER
+# =========================
+CMD ["/entrypoint.sh"]
