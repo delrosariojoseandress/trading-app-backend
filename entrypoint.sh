@@ -1,23 +1,16 @@
 #!/bin/bash
 
 echo "======================================"
-echo " Starting Laravel Trading Container"
+echo " Laravel Trading App Starting"
 echo "======================================"
 
-# Wait for database (safe startup)
-echo "Waiting for database..."
+echo "Waiting for services..."
 
-until nc -z db 5432; do
-  echo "DB not ready yet..."
-  sleep 2
-done
+sleep 5
 
-echo "Database ready!"
+echo "Render DB detected - NO AUTO MIGRATION (SAFE MODE)"
 
-# Run migrations safely
-php artisan migrate --force
-
-# Optimize Laravel
+# Laravel optimizations only
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
