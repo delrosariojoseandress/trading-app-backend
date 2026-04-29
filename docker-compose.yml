@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    container_name: echelon_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: echelon_db
+      POSTGRES_USER: echelon
+      POSTGRES_PASSWORD: echelon2026
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: echelon_app
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - db
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports:
+      - "8000:8000"
+
+volumes:
+  pg_data:
